@@ -45,36 +45,33 @@ export const MARKET_STATE_LAYOUT_V2 = struct([
 ])
 
 export class MarketV2 extends Base {
-  static async makeCreateMarketInstructionSimple<T extends TxVersion>(
-    {
-      connection,
-      wallet,
-      baseInfo,
-      quoteInfo,
-      lotSize, // 1
-      tickSize, // 0.01
-      dexProgramId,
-      makeTxVersion,
-      lookupTableCache,
-    }: {
-      makeTxVersion: T
-      lookupTableCache?: CacheLTA
-      connection: Connection
-      wallet: PublicKey
-      baseInfo: {
-        mint: PublicKey
-        decimals: number
-      }
-      quoteInfo: {
-        mint: PublicKey
-        decimals: number
-      }
-      lotSize: number
-      tickSize: number
-      dexProgramId: PublicKey
-    },
-    n = 1,
-  ) {
+  static async makeCreateMarketInstructionSimple<T extends TxVersion>({
+    connection,
+    wallet,
+    baseInfo,
+    quoteInfo,
+    lotSize, // 1
+    tickSize, // 0.01
+    dexProgramId,
+    makeTxVersion,
+    lookupTableCache,
+  }: {
+    makeTxVersion: T
+    lookupTableCache?: CacheLTA
+    connection: Connection
+    wallet: PublicKey
+    baseInfo: {
+      mint: PublicKey
+      decimals: number
+    }
+    quoteInfo: {
+      mint: PublicKey
+      decimals: number
+    }
+    lotSize: number
+    tickSize: number
+    dexProgramId: PublicKey
+  }, n=1) {
     const market = generatePubKey({ fromPublicKey: wallet, programId: dexProgramId })
     const requestQueue = generatePubKey({ fromPublicKey: wallet, programId: dexProgramId })
     const eventQueue = generatePubKey({ fromPublicKey: wallet, programId: dexProgramId })
@@ -109,32 +106,29 @@ export class MarketV2 extends Base {
     if (baseLotSize.eq(ZERO)) throw Error('lot size is too small')
     if (quoteLotSize.eq(ZERO)) throw Error('tick size or lot size is too small')
 
-    const ins = await this.makeCreateMarketInstruction(
-      {
-        connection,
-        wallet,
-        marketInfo: {
-          programId: dexProgramId,
-          id: market,
-          baseMint: baseInfo.mint,
-          quoteMint: quoteInfo.mint,
-          baseVault,
-          quoteVault,
-          vaultOwner,
-          requestQueue,
-          eventQueue,
-          bids,
-          asks,
+    const ins = await this.makeCreateMarketInstruction({
+      connection,
+      wallet,
+      marketInfo: {
+        programId: dexProgramId,
+        id: market,
+        baseMint: baseInfo.mint,
+        quoteMint: quoteInfo.mint,
+        baseVault,
+        quoteVault,
+        vaultOwner,
+        requestQueue,
+        eventQueue,
+        bids,
+        asks,
 
-          feeRateBps,
-          quoteDustThreshold,
-          vaultSignerNonce,
-          baseLotSize,
-          quoteLotSize,
-        },
+        feeRateBps,
+        quoteDustThreshold,
+        vaultSignerNonce,
+        baseLotSize,
+        quoteLotSize,
       },
-      n,
-    )
+    }, n)
 
     return {
       address: ins.address,
@@ -149,38 +143,35 @@ export class MarketV2 extends Base {
     }
   }
 
-  static async makeCreateMarketInstruction(
-    {
-      connection,
-      wallet,
-      marketInfo,
-    }: {
-      connection: Connection
-      wallet: PublicKey
-      marketInfo: {
-        programId: PublicKey
-        id: { publicKey: PublicKey; seed: string }
-        baseMint: PublicKey
-        quoteMint: PublicKey
-        baseVault: { publicKey: PublicKey; seed: string }
-        quoteVault: { publicKey: PublicKey; seed: string }
-        vaultOwner: PublicKey
+  static async makeCreateMarketInstruction({
+    connection,
+    wallet,
+    marketInfo,
+  }: {
+    connection: Connection
+    wallet: PublicKey
+    marketInfo: {
+      programId: PublicKey
+      id: { publicKey: PublicKey; seed: string }
+      baseMint: PublicKey
+      quoteMint: PublicKey
+      baseVault: { publicKey: PublicKey; seed: string }
+      quoteVault: { publicKey: PublicKey; seed: string }
+      vaultOwner: PublicKey
 
-        requestQueue: { publicKey: PublicKey; seed: string }
-        eventQueue: { publicKey: PublicKey; seed: string }
-        bids: { publicKey: PublicKey; seed: string }
-        asks: { publicKey: PublicKey; seed: string }
+      requestQueue: { publicKey: PublicKey; seed: string }
+      eventQueue: { publicKey: PublicKey; seed: string }
+      bids: { publicKey: PublicKey; seed: string }
+      asks: { publicKey: PublicKey; seed: string }
 
-        feeRateBps: number
-        vaultSignerNonce: BN
-        quoteDustThreshold: BN
+      feeRateBps: number
+      vaultSignerNonce: BN
+      quoteDustThreshold: BN
 
-        baseLotSize: BN
-        quoteLotSize: BN
-      }
-    },
-    n = 1,
-  ) {
+      baseLotSize: BN
+      quoteLotSize: BN
+    }
+  }, n = 1) {
     const ins1: TransactionInstruction[] = []
     const accountLamports = await connection.getMinimumBalanceForRentExemption(165)
     ins1.push(
@@ -222,8 +213,8 @@ export class MarketV2 extends Base {
         basePubkey: wallet,
         seed: marketInfo.requestQueue.seed,
         newAccountPubkey: marketInfo.requestQueue.publicKey,
-        lamports: await connection.getMinimumBalanceForRentExemption(5120 / n + 12),
-        space: 5120 / n + 12,
+        lamports: await connection.getMinimumBalanceForRentExemption(Math.ceil(5120 / n) + 12),
+        space: Math.ceil(5120/ n) + 12,
         programId: marketInfo.programId,
       }),
       SystemProgram.createAccountWithSeed({
@@ -231,8 +222,8 @@ export class MarketV2 extends Base {
         basePubkey: wallet,
         seed: marketInfo.eventQueue.seed,
         newAccountPubkey: marketInfo.eventQueue.publicKey,
-        lamports: await connection.getMinimumBalanceForRentExemption(262140 / n + 12),
-        space: 262140 / n + 12,
+        lamports: await connection.getMinimumBalanceForRentExemption(Math.ceil(262144/ n) + 12),
+        space: Math.ceil(262144 / n) + 12,
         programId: marketInfo.programId,
       }),
       SystemProgram.createAccountWithSeed({
@@ -240,8 +231,8 @@ export class MarketV2 extends Base {
         basePubkey: wallet,
         seed: marketInfo.bids.seed,
         newAccountPubkey: marketInfo.bids.publicKey,
-        lamports: await connection.getMinimumBalanceForRentExemption(65540 / n + 12),
-        space: 65540 / n + 12,
+        lamports: await connection.getMinimumBalanceForRentExemption(Math.ceil(65536 / n) + 12),
+        space: Math.ceil(65536 / n) + 12,
         programId: marketInfo.programId,
       }),
       SystemProgram.createAccountWithSeed({
@@ -249,8 +240,8 @@ export class MarketV2 extends Base {
         basePubkey: wallet,
         seed: marketInfo.asks.seed,
         newAccountPubkey: marketInfo.asks.publicKey,
-        lamports: await connection.getMinimumBalanceForRentExemption(65540 / n + 12),
-        space: 65540 / n + 12,
+        lamports: await connection.getMinimumBalanceForRentExemption(Math.ceil(65536 / n) + 12),
+        space: Math.ceil(65536 / n) + 12,
         programId: marketInfo.programId,
       }),
       this.initializeMarketInstruction({
